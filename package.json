@@ -1,0 +1,14 @@
+﻿{
+  "author": "Secret Place Studio",
+  "name": "sp.sframework.core",
+  "displayName": "SF Core",
+  "version": "0.1.0",
+  "description": "Service Framework - core library used as the base for SF Modules",
+  "keywords": [
+    "core",
+    "sframework",
+    "di"
+  ],
+  "category": "SFramework",
+  "type": "library"
+}

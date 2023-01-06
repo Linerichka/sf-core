@@ -1,0 +1,13 @@
+{
+    "name": "SFramework.Core.Runtime",
+    "rootNamespace": "SFramework.Core.Runtime",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
