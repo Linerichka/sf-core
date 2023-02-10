@@ -5,6 +5,7 @@ namespace SFramework.Core.Runtime
 {
     public static partial class SFExtensions
     {
+        public static bool IsNone(this string value) => string.IsNullOrWhiteSpace(value);
         public static T SFInstantiate<T>(this T prefab) where T : Object, ISFInjectable
         {
             if (prefab == null) return null;
@@ -101,6 +102,8 @@ namespace SFramework.Core.Runtime
             {
                 var childPaths = GetChildPaths(root, "");
 
+                if(childPaths == null) continue;
+                
                 foreach (var path in childPaths)
                 {
                     ids.Add(path);
