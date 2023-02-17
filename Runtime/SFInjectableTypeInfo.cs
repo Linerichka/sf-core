@@ -28,7 +28,7 @@ namespace SFramework.Core.Runtime
         {
             return Type.Name;
         }
-
+        
         private IEnumerable<FieldInfo> GetInjectableFields(Type type)
         {
             var fieldInfos = type.GetFields(BINDING_FLAGS);

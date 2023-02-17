@@ -1,6 +1,8 @@
-﻿namespace SFramework.Core.Runtime
+﻿using System;
+
+namespace SFramework.Core.Runtime
 {
-    public interface ISFService : ISFInjectable
+    public interface ISFService : ISFInjectable, IDisposable
     {
     }
 }

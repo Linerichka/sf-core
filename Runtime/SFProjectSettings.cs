@@ -28,7 +28,7 @@ namespace SFramework.Core.Runtime
             {
                 settings = CreateInstance<T>();
                 UnityEditor.AssetDatabase.CreateAsset(settings, _assetPath);
-                UnityEditor.AssetDatabase.SaveAssets();
+                UnityEditor.AssetDatabase.SaveAssetIfDirty(settings);
                 UnityEditor.AssetDatabase.Refresh();
             }
             

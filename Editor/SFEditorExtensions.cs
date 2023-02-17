@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace SFramework.Core.Editor
 {
-    public static class SFEditorExtensions
+    public static partial class SFEditorExtensions
     {
         [Flags]
         public enum FindOptions

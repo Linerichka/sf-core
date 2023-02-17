@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace SFramework.Core.Editor
 {
-    public static class SFCoreProjectSettingsProvider
+    public static class SFCoreSettingsProvider
     {
         [SettingsProvider]
         public static SettingsProvider Create()
@@ -18,6 +18,7 @@ namespace SFramework.Core.Editor
                     EditorGUILayout.PropertyField(settingsSO.FindProperty("generatorScriptsPath"));
                     EditorGUILayout.PropertyField(settingsSO.FindProperty("isDebug"));
                     settingsSO.ApplyModifiedPropertiesWithoutUndo();
+                    AssetDatabase.SaveAssetIfDirty(settingsSO.targetObject);
                 },
 
                 // Populate the search keywords to enable smart search filtering and label highlighting:

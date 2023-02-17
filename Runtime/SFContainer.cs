@@ -10,6 +10,7 @@ namespace SFramework.Core.Runtime
     {
         private static readonly IDictionary<Type, SFInjectableTypeInfo> _injectableTypes;
         private readonly Dictionary<Type, object> _dependencies;
+        private readonly Dictionary<Type, List<Type>> _mapping;
 
         static SFContainer()
         {
@@ -22,38 +23,66 @@ namespace SFramework.Core.Runtime
 
         public SFContainer()
         {
+            _mapping = new Dictionary<Type, List<Type>>();
             _dependencies = new Dictionary<Type, object>();
             Bind<ISFContainer>(this);
         }
 
-        public void Bind(object obj)
+        public void Bind(object instance)
         {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            if (instance == null) throw new ArgumentNullException(nameof(instance));
 
-            var type = obj.GetType();
+            var type = instance.GetType();
 
             if (_dependencies.ContainsKey(type))
             {
                 throw new Exception("Object of this type already exists in the dependency container");
             }
 
-            _dependencies[type] = obj;
+            _dependencies[type] = instance;
         }
 
-        public void Bind<T>(object obj)
+        public void Bind<T>(object instance)
         {
             if (_dependencies.ContainsKey(typeof(T)))
             {
                 throw new Exception("Object of this type already exists in the dependency container");
             }
+            
+            Debug.Log($"[Core] Bind: {typeof(T).Name}");
+            
+            foreach (var subclassType in typeof(T).GetInterfaces())
+            {
+                if (!_mapping.ContainsKey(subclassType))
+                {
+                    _mapping[subclassType] = new List<Type>();
+                }
 
-            _dependencies[typeof(T)] = obj ?? throw new ArgumentNullException(nameof(obj));
+                _mapping[subclassType].Add(typeof(T));
+            }
+
+            _dependencies[typeof(T)] = instance ?? throw new ArgumentNullException(nameof(instance));
         }
 
 
         public T Resolve<T>() where T : class
         {
             return Resolve(typeof(T)) as T;
+        }
+
+        public T[] ResolveMany<T>()
+        {
+            if (!_mapping.ContainsKey(typeof(T))) return Array.Empty<T>();
+
+            var result = new T[_mapping[typeof(T)].Count];
+
+            for (int i = 0; i < _mapping[typeof(T)].Count; i++)
+            {
+                var type = _mapping[typeof(T)][i];
+                result[i] = (T)Resolve(type);
+            }
+
+            return result;
         }
 
         public object Resolve(Type type)
