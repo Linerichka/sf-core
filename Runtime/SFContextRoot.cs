@@ -10,19 +10,21 @@ namespace SFramework.Core.Runtime
         
         protected virtual void Awake()
         {
-            _container = new SFContainer();
             PreInit();
+            _container = new SFContainer();
             Setup(_container);
             _container.Inject();
+            Init(_container);
         }
 
         protected virtual void Start()
         {
-            Init(_container);
+            PostInit(_container);
         }
 
         protected abstract void PreInit();
         protected abstract void Setup(SFContainer container);
         protected abstract void Init(ISFContainer container);
+        protected abstract void PostInit(ISFContainer container);
     }
 }

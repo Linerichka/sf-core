@@ -1,16 +1,12 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace SFramework.Core.Runtime
 {
+    [Serializable]
     public class SFCoreSettings : SFProjectSettings<SFCoreSettings>
     {
-        public string GeneratorScriptsPath => generatorScriptsPath;
-        public bool IsDebug => isDebug;
-        
-        [SerializeField]
-        private string generatorScriptsPath = "SFramework/Generated";
-
-        [SerializeField]
-        private bool isDebug;
+        public string GeneratorScriptsPath = "SFramework/Generated";
+        public bool IsDebug;
     }
 }

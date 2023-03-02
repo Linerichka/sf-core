@@ -15,8 +15,8 @@ namespace SFramework.Core.Editor
                 {
                     if (!SFCoreSettings.Instance(out var settings)) return;
                     var settingsSO = new SerializedObject(settings);
-                    EditorGUILayout.PropertyField(settingsSO.FindProperty("generatorScriptsPath"));
-                    EditorGUILayout.PropertyField(settingsSO.FindProperty("isDebug"));
+                    EditorGUILayout.PropertyField(settingsSO.FindProperty("GeneratorScriptsPath"));
+                    EditorGUILayout.PropertyField(settingsSO.FindProperty("IsDebug"));
                     settingsSO.ApplyModifiedPropertiesWithoutUndo();
                     AssetDatabase.SaveAssetIfDirty(settingsSO.targetObject);
                 },
