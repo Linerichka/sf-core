@@ -5,16 +5,15 @@ namespace SFramework.Core.Runtime
 {
     public abstract class SFView : MonoBehaviour, ISFInjectable
     {
-        protected virtual void PreInit()
-        {
-        }
-        
         protected virtual void Awake()
         {
             PreInit();
-            SFContextRoot.Container.Inject(this);
+            this.Inject();
         }
 
+        protected virtual void PreInit()
+        {
+        }
         
         [SFInject]
         protected virtual void Init()

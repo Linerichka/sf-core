@@ -2,49 +2,54 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 
 namespace SFramework.Core.Runtime
 {
     internal sealed class SFInjectableTypeInfo
     {
-        public Type Type { get; }
-        public IEnumerable<FieldInfo> InjectableFields { get; }
-        public IEnumerable<PropertyInfo> InjectableProperties { get; }
-        public IEnumerable<MethodInfo> InjectableMethods { get; }
+        internal Type Type;
+        internal IEnumerable<FieldInfo> Fields;
+        internal IEnumerable<PropertyInfo> Properties;
+        internal IEnumerable<MethodInfo> Methods;
+        internal IDictionary<MethodInfo, ParameterInfo[]> ParametersByMethod;
 
         private const BindingFlags BINDING_FLAGS =
             BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
-        public SFInjectableTypeInfo(Type type)
+        internal SFInjectableTypeInfo(ref Type type)
         {
             Type = type;
-            InjectableFields = GetInjectableFields(type);
-            InjectableProperties = GetInjectableProperties(type);
-            InjectableMethods = GetInjectableMethods(type);
+            GetFields();
+            GetProperties();
+            GetMethods();
         }
 
         public override string ToString()
         {
             return Type.Name;
         }
-        
-        private IEnumerable<FieldInfo> GetInjectableFields(Type type)
+
+        private void GetFields()
         {
-            var fieldInfos = type.GetFields(BINDING_FLAGS);
-            return fieldInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null);
+            var fieldInfos = Type.GetFields(BINDING_FLAGS);
+            Fields =  fieldInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null);
         }
 
-        private IEnumerable<PropertyInfo> GetInjectableProperties(Type type)
+        private void GetProperties()
         {
-            var propertyInfos = type.GetProperties(BINDING_FLAGS);
-            return propertyInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null);
+            var propertyInfos = Type.GetProperties(BINDING_FLAGS);
+            Properties =  propertyInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null);
         }
 
-        private IEnumerable<MethodInfo> GetInjectableMethods(Type type)
+        private void GetMethods()
         {
-            var methodInfos = type.GetMethods(BINDING_FLAGS);
-            return methodInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null);
+            var methodInfos = Type.GetMethods(BINDING_FLAGS);
+            Methods = methodInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null);
+            ParametersByMethod = new Dictionary<MethodInfo, ParameterInfo[]>();
+            foreach (var methodInfo in Methods)
+            {
+                ParametersByMethod[methodInfo] = methodInfo.GetParameters();
+            }
         }
     }
 }

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
 namespace SFramework.Core.Runtime
@@ -9,26 +12,25 @@ namespace SFramework.Core.Runtime
     public sealed class SFContainer : ISFContainer
     {
         private static readonly IDictionary<Type, SFInjectableTypeInfo> _injectableTypes;
-        private readonly Dictionary<Type, object> _dependencies;
-        private readonly Dictionary<Type, List<Type>> _mapping;
+        private readonly Dictionary<Type, object> _dependencies = new();
+        private readonly Dictionary<Type, List<Type>> _mapping = new();
 
         static SFContainer()
         {
             _injectableTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .Where(t => t.IsClass && typeof(ISFInjectable).IsAssignableFrom(t))
-                .Select(t => new SFInjectableTypeInfo(t))
-                .ToDictionary(t => t.Type, t => t);
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsClass && typeof(ISFInjectable).IsAssignableFrom(type))
+                .Select(type => new SFInjectableTypeInfo(ref type))
+                .ToDictionary(typeInfo => typeInfo.Type, t => t);
         }
+
 
         public SFContainer()
         {
-            _mapping = new Dictionary<Type, List<Type>>();
-            _dependencies = new Dictionary<Type, object>();
-            Bind<ISFContainer>(this);
+            Register<ISFContainer, SFContainer>(this);
         }
 
-        public void Bind(object instance)
+        public void Register(object instance)
         {
             if (instance == null) throw new ArgumentNullException(nameof(instance));
 
@@ -42,26 +44,69 @@ namespace SFramework.Core.Runtime
             _dependencies[type] = instance;
         }
 
-        public void Bind<T>(object instance)
+        public void Register<TService, TImplementation>() where TImplementation : TService
         {
-            if (_dependencies.ContainsKey(typeof(T)))
+            if (_dependencies.ContainsKey(typeof(TService)))
             {
                 throw new Exception("Object of this type already exists in the dependency container");
             }
-            
-            Debug.Log($"[Core] Bind: {typeof(T).Name}");
-            
-            foreach (var subclassType in typeof(T).GetInterfaces())
+
+            object instance;
+            var constructor = typeof(TImplementation).GetConstructors().FirstOrDefault();
+
+            if (constructor != null)
+            {
+                var parameters = constructor.GetParameters();
+
+                if (parameters.Length > 0)
+                {
+                    var parameterInstances = new object[parameters.Length];
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        if (!_dependencies.ContainsKey(parameters[i].ParameterType))
+                        {
+                            throw new Exception(
+                                $"Service of type {parameters[i].ParameterType.FullName} is not registered.");
+                        }
+
+                        parameterInstances[i] = _dependencies[parameters[i].ParameterType];
+                    }
+
+                    instance = constructor.Invoke(parameterInstances);
+                }
+                else
+                {
+                    instance = Activator.CreateInstance(typeof(TImplementation));
+                }
+            }
+            else
+            {
+                instance = Activator.CreateInstance(typeof(TImplementation));
+            }
+
+            Register<TService, TImplementation>(instance);
+        }
+
+        public void Register<TService, TImplementation>(object instance) where TImplementation : TService
+        {
+            if (_dependencies.ContainsKey(typeof(TService)))
+            {
+                throw new Exception("Object of this type already exists in the dependency container");
+            }
+
+            Debug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
+
+            foreach (var subclassType in typeof(TService).GetInterfaces())
             {
                 if (!_mapping.ContainsKey(subclassType))
                 {
                     _mapping[subclassType] = new List<Type>();
                 }
 
-                _mapping[subclassType].Add(typeof(T));
+                _mapping[subclassType].Add(typeof(TService));
             }
 
-            _dependencies[typeof(T)] = instance ?? throw new ArgumentNullException(nameof(instance));
+            _dependencies[typeof(TService)] = instance ?? throw new ArgumentNullException(nameof(instance));
         }
 
 
@@ -139,49 +184,52 @@ namespace SFramework.Core.Runtime
 
             if (!_injectableTypes.TryGetValue(targetObject.GetType(), out var injectableType)) return;
 
-            var injectableFields = injectableType.InjectableFields;
-            var injectableProperties = injectableType.InjectableProperties;
-            var injectableMethods = injectableType.InjectableMethods;
-
-            InjectFields(ref targetObject, ref injectableFields);
-            InjectProperties(ref targetObject, ref injectableProperties);
-            InjectMethods(ref targetObject, ref injectableMethods);
+            InjectFields(ref targetObject, ref injectableType.Fields);
+            InjectProperties(ref targetObject, ref injectableType.Properties);
+            InjectMethods(ref targetObject, ref injectableType.Methods, ref injectableType.ParametersByMethod);
         }
+
 
         private void InjectFields(ref object targetObject, ref IEnumerable<FieldInfo> injectableFields)
         {
-            foreach (var field in injectableFields)
+            foreach (var fieldInfo in injectableFields)
             {
-                var dependency = Resolve(field.FieldType);
-                field.SetValue(targetObject, dependency);
+                var dependency = Resolve(fieldInfo.FieldType);
+                fieldInfo.SetValue(targetObject, dependency);
             }
         }
 
         private void InjectProperties(ref object targetObject, ref IEnumerable<PropertyInfo> injectableProperties)
         {
-            foreach (var property in injectableProperties)
+            foreach (var propertyInfo in injectableProperties)
             {
-                var dependency = Resolve(property.PropertyType);
-                property.SetValue(targetObject, dependency);
+                var dependency = Resolve(propertyInfo.PropertyType);
+                propertyInfo.SetValue(targetObject, dependency);
             }
         }
 
-        private void InjectMethods(ref object targetObject, ref IEnumerable<MethodInfo> injectableMethods)
+        private void InjectMethods(ref object targetObject, ref IEnumerable<MethodInfo> methods,
+            ref IDictionary<MethodInfo, ParameterInfo[]> parametersByMethod)
         {
-            foreach (var method in injectableMethods)
+            foreach (var methodInfo in methods)
             {
-                var parameters = method.GetParameters();
-
-                var dependencies = new object[parameters.Length];
-
-                for (var i = 0; i < method.GetParameters().Length; i++)
+                if (parametersByMethod.TryGetValue(methodInfo, out var parameters))
                 {
-                    var parameter = parameters[i];
-                    var dependency = Resolve(parameter.ParameterType);
-                    dependencies[i] = dependency;
-                }
+                    var dependencies = new object[parameters.Length];
 
-                method.Invoke(targetObject, dependencies);
+                    for (var i = 0; i < methodInfo.GetParameters().Length; i++)
+                    {
+                        var parameter = parameters[i];
+                        var dependency = Resolve(parameter.ParameterType);
+                        dependencies[i] = dependency;
+                    }
+
+                    methodInfo.Invoke(targetObject, dependencies);
+                }
+                else
+                {
+                    methodInfo.Invoke(targetObject, null);
+                }
             }
         }
     }
