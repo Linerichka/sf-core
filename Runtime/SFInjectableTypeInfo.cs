@@ -23,7 +23,6 @@ namespace SFramework.Core.Runtime
             GetFields();
             GetProperties();
             GetMethods();
-            Debug.Log("Test");
         }
 
         public override string ToString()
