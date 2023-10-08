@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
 namespace SFramework.Core.Runtime
 {
     public sealed class SFContainer : ISFContainer
     {
-        private static readonly IDictionary<Type, SFInjectableTypeInfo> _injectableTypes;
+        private static readonly Dictionary<Type, SFInjectableTypeInfo> _injectableTypes;
         private readonly Dictionary<Type, object> _dependencies = new();
         private readonly Dictionary<Type, List<Type>> _mapping = new();
 
@@ -132,9 +129,9 @@ namespace SFramework.Core.Runtime
 
         public object Resolve(Type type)
         {
-            if (_dependencies.ContainsKey(type))
+            if (_dependencies.TryGetValue(type, out var resolve))
             {
-                return _dependencies[type];
+                return resolve;
             }
 
             return _dependencies.FirstOrDefault(kvp => type.IsAssignableFrom(kvp.Key)).Value;
@@ -190,7 +187,7 @@ namespace SFramework.Core.Runtime
         }
 
 
-        private void InjectFields(ref object targetObject, ref IEnumerable<FieldInfo> injectableFields)
+        private void InjectFields(ref object targetObject, ref FieldInfo[] injectableFields)
         {
             foreach (var fieldInfo in injectableFields)
             {
@@ -199,7 +196,7 @@ namespace SFramework.Core.Runtime
             }
         }
 
-        private void InjectProperties(ref object targetObject, ref IEnumerable<PropertyInfo> injectableProperties)
+        private void InjectProperties(ref object targetObject, ref PropertyInfo[] injectableProperties)
         {
             foreach (var propertyInfo in injectableProperties)
             {
@@ -208,8 +205,8 @@ namespace SFramework.Core.Runtime
             }
         }
 
-        private void InjectMethods(ref object targetObject, ref IEnumerable<MethodInfo> methods,
-            ref IDictionary<MethodInfo, ParameterInfo[]> parametersByMethod)
+        private void InjectMethods(ref object targetObject, ref MethodInfo[] methods,
+            ref Dictionary<MethodInfo, ParameterInfo[]> parametersByMethod)
         {
             foreach (var methodInfo in methods)
             {
@@ -217,7 +214,7 @@ namespace SFramework.Core.Runtime
                 {
                     var dependencies = new object[parameters.Length];
 
-                    for (var i = 0; i < methodInfo.GetParameters().Length; i++)
+                    for (var i = 0; i < parameters.Length; i++)
                     {
                         var parameter = parameters[i];
                         var dependency = Resolve(parameter.ParameterType);
