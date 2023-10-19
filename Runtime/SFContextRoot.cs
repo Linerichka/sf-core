@@ -4,15 +4,15 @@ namespace SFramework.Core.Runtime
 {
     public abstract class SFContextRoot : MonoBehaviour
     {
-        public static ISFContainer Container => _container;
-
+        internal static SFContainer _Container => _container;
+        protected static ISFContainer Container => _container;
         private static SFContainer _container;
-        
+
         protected virtual void Awake()
         {
             PreInit();
             _container = new SFContainer();
-            Setup(_container);
+            Bind(_container);
             _container.Inject();
             Init(_container);
         }
@@ -23,7 +23,7 @@ namespace SFramework.Core.Runtime
         }
 
         protected abstract void PreInit();
-        protected abstract void Setup(SFContainer container);
+        protected abstract void Bind(SFContainer container);
         protected abstract void Init(ISFContainer container);
         protected abstract void PostInit(ISFContainer container);
     }

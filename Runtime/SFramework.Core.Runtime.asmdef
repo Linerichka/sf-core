@@ -1,7 +1,8 @@
 {
     "name": "SFramework.Core.Runtime",
     "rootNamespace": "SFramework.Core.Runtime",
-    "references": [],
+    "references": [
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

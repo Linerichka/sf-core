@@ -11,6 +11,7 @@ namespace SFramework.Core.Runtime
         private static readonly Dictionary<Type, SFInjectableTypeInfo> _injectableTypes;
         private readonly Dictionary<Type, object> _dependencies = new();
         private readonly Dictionary<Type, List<Type>> _mapping = new();
+        private readonly List<ISFService> _services = new();
 
         static SFContainer()
         {
@@ -27,21 +28,7 @@ namespace SFramework.Core.Runtime
             Register<ISFContainer, SFContainer>(this);
         }
 
-        public void Register(object instance)
-        {
-            if (instance == null) throw new ArgumentNullException(nameof(instance));
-
-            var type = instance.GetType();
-
-            if (_dependencies.ContainsKey(type))
-            {
-                throw new Exception("Object of this type already exists in the dependency container");
-            }
-
-            _dependencies[type] = instance;
-        }
-
-        public void Register<TService, TImplementation>() where TImplementation : TService
+        public TService Register<TService, TImplementation>() where TImplementation : TService
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
@@ -49,8 +36,9 @@ namespace SFramework.Core.Runtime
             }
 
             object instance;
-            var constructor = typeof(TImplementation).GetConstructors().FirstOrDefault();
-
+            // var bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public;
+            var constructor = typeof(TImplementation).GetTypeInfo().DeclaredConstructors.FirstOrDefault(); //typeof(TImplementation).GetConstructor(bindingFlags, null, Type.EmptyTypes, null);
+            
             if (constructor != null)
             {
                 var parameters = constructor.GetParameters();
@@ -73,18 +61,18 @@ namespace SFramework.Core.Runtime
                 }
                 else
                 {
-                    instance = Activator.CreateInstance(typeof(TImplementation));
+                    instance = Activator.CreateInstance(typeof(TImplementation), true);
                 }
             }
             else
             {
-                instance = Activator.CreateInstance(typeof(TImplementation));
+                instance = Activator.CreateInstance(typeof(TImplementation), true);
             }
 
-            Register<TService, TImplementation>(instance);
+            return Register<TService, TImplementation>(instance);
         }
 
-        public void Register<TService, TImplementation>(object instance) where TImplementation : TService
+        public TService Register<TService, TImplementation>(object instance) where TImplementation : TService
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
@@ -104,8 +92,14 @@ namespace SFramework.Core.Runtime
             }
 
             _dependencies[typeof(TService)] = instance ?? throw new ArgumentNullException(nameof(instance));
-        }
 
+            if (typeof(ISFService).IsAssignableFrom(typeof(TService)))
+            {
+                _services.Add(instance as ISFService);
+            }
+
+            return (TService)instance;
+        }
 
         public T Resolve<T>() where T : class
         {
@@ -159,7 +153,7 @@ namespace SFramework.Core.Runtime
         /// <summary>
         /// Inject all dependencies in container
         /// </summary>
-        public void Inject()
+        internal void Inject()
         {
             foreach (var dependency in _dependencies.Values)
             {
@@ -167,7 +161,7 @@ namespace SFramework.Core.Runtime
             }
         }
 
-        public void Inject(GameObject gameObject, bool includeInactive = false)
+        internal void Inject(GameObject gameObject, bool includeInactive = false)
         {
             foreach (var injectable in gameObject.GetComponentsInChildren<ISFInjectable>(includeInactive))
             {
@@ -175,7 +169,7 @@ namespace SFramework.Core.Runtime
             }
         }
 
-        public void Inject(object targetObject)
+        internal void Inject(object targetObject)
         {
             if (targetObject == null) throw new ArgumentNullException(nameof(targetObject));
 
