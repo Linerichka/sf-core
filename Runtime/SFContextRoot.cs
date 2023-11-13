@@ -11,7 +11,7 @@ namespace SFramework.Core.Runtime
         protected virtual void Awake()
         {
             PreInit();
-            _container = new SFContainer();
+            _container = new SFContainer(gameObject);
             Bind(_container);
             _container.Inject();
             Init(_container);

@@ -23,9 +23,10 @@ namespace SFramework.Core.Runtime
         }
 
 
-        public SFContainer()
+        public SFContainer(GameObject gameObject)
         {
             Register<ISFContainer, SFContainer>(this);
+            Root = gameObject.transform;
         }
 
         public TService Register<TService, TImplementation>() where TImplementation : TService
@@ -36,8 +37,8 @@ namespace SFramework.Core.Runtime
             }
 
             object instance;
-            // var bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public;
-            var constructor = typeof(TImplementation).GetTypeInfo().DeclaredConstructors.FirstOrDefault(); //typeof(TImplementation).GetConstructor(bindingFlags, null, Type.EmptyTypes, null);
+
+            var constructor = typeof(TImplementation).GetTypeInfo().DeclaredConstructors.FirstOrDefault();
             
             if (constructor != null)
             {
@@ -100,6 +101,8 @@ namespace SFramework.Core.Runtime
 
             return (TService)instance;
         }
+
+        public Transform Root { get; private set; }
 
         public T Resolve<T>() where T : class
         {
