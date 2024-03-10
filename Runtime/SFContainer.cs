@@ -101,6 +101,33 @@ namespace SFramework.Core.Runtime
 
             return (TService)instance;
         }
+        
+        public void Register(Type type, object instance)
+        {
+            if (_dependencies.ContainsKey(type))
+            {
+                throw new Exception("Object of this type already exists in the dependency container");
+            }
+            
+            Debug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
+            
+            foreach (var subclassType in type.GetInterfaces())
+            {
+                if (!_mapping.ContainsKey(subclassType))
+                {
+                    _mapping[subclassType] = new List<Type>();
+                }
+            
+                _mapping[subclassType].Add(type);
+            }
+            
+            _dependencies[type] = instance ?? throw new ArgumentNullException(nameof(instance));
+            
+            if (typeof(ISFService).IsAssignableFrom(type))
+            {
+                _services.Add(instance as ISFService);
+            }
+        }
 
         public Transform Root { get; private set; }
 
