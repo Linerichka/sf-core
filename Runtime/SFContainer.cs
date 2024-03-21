@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -33,7 +33,10 @@ namespace SFramework.Core.Runtime
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
-                throw new Exception("Object of this type already exists in the dependency container");
+                if (Debug.isDebugBuild)
+                {
+                    Debug.LogWarning("Object of this type already exists in the dependency container");
+                }
             }
 
             object instance;
@@ -49,13 +52,18 @@ namespace SFramework.Core.Runtime
                     var parameterInstances = new object[parameters.Length];
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        if (!_dependencies.ContainsKey(parameters[i].ParameterType))
+                        if (!_dependencies.TryGetValue(parameters[i].ParameterType, out var obj))
                         {
-                            throw new Exception(
-                                $"Service of type {parameters[i].ParameterType.FullName} is not registered.");
+                            if (Debug.isDebugBuild)
+                            {
+                                Debug.LogError($"Service of type {parameters[i].ParameterType.FullName} is not registered. Returning NULL.");
+                            }
+                            
+                            instance = default;
+                            break;
                         }
 
-                        parameterInstances[i] = _dependencies[parameters[i].ParameterType];
+                        parameterInstances[i] = obj;
                     }
 
                     instance = constructor.Invoke(parameterInstances);
@@ -77,7 +85,10 @@ namespace SFramework.Core.Runtime
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
-                throw new Exception("Object of this type already exists in the dependency container");
+                if (Debug.isDebugBuild)
+                {
+                    Debug.LogWarning("Object of this type already exists in the dependency container");
+                }
             }
 
             Debug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
@@ -106,10 +117,17 @@ namespace SFramework.Core.Runtime
         {
             if (_dependencies.ContainsKey(type))
             {
-                throw new Exception("Object of this type already exists in the dependency container");
+                if (Debug.isDebugBuild)
+                {
+                    Debug.LogWarning("Object of this type already exists in the dependency container");
+                }
             }
             
-            Debug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
+            
+            if (Debug.isDebugBuild)
+            {
+                Debug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
+            }
             
             foreach (var subclassType in type.GetInterfaces())
             {
