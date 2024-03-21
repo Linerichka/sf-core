@@ -91,8 +91,11 @@ namespace SFramework.Core.Runtime
                 }
             }
 
-            Debug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
-
+            if (Debug.isDebugBuild)
+            {
+                Debug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
+            }
+            
             foreach (var subclassType in typeof(TService).GetInterfaces())
             {
                 if (!_mapping.ContainsKey(subclassType))
