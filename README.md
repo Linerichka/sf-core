@@ -24,18 +24,17 @@ After cloning the repository, you can include the necessary namespaces in your p
 API
 ```
 
-## Folder Structure
-Editor: Contains utilities and extensions specifically for the editor.
-Runtime: Core runtime functionalities and modules essential for the application.
-Contributing
-Contributions are welcome! If you have suggestions, bug reports, or would like to contribute code, please submit a pull request or open an issue.
-
 ## Modules
 [SF-Bootstrap](https://github.com/huran438/sf-bootstrap.git)
+
 [SF-Configs](https://github.com/huran438/sf-configs.git)
+
 [SF-Pools](https://github.com/huran438/sf-pools.git)
+
 [SF-UI](https://github.com/huran438/sf-ui.git)
+
 [SF-ECS](https://github.com/huran438/sf-ecs.git)
+
 [SF-NodeCanvas](https://github.com/huran438/sf-nodecanvas.git)
 
 ## License
