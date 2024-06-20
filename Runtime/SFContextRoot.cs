@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Threading;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace SFramework.Core.Runtime
 {
@@ -14,17 +16,16 @@ namespace SFramework.Core.Runtime
             _container = new SFContainer(gameObject);
             Bind(_container);
             _container.Inject();
-            Init(_container);
         }
 
-        protected virtual void Start()
+        private async UniTaskVoid Start()
         {
-            PostInit(_container);
+            await _container.InitServices(destroyCancellationToken);
+            await Init(_container, destroyCancellationToken);
         }
 
         protected abstract void PreInit();
         protected abstract void Bind(SFContainer container);
-        protected abstract void Init(ISFContainer container);
-        protected abstract void PostInit(ISFContainer container);
+        protected abstract UniTask Init(ISFContainer container, CancellationToken cancellationToken);
     }
 }

@@ -2,6 +2,8 @@
     "name": "SFramework.Core.Runtime",
     "rootNamespace": "SFramework.Core.Runtime",
     "references": [
+        "UniTask",
+        "SFramework.Debug.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

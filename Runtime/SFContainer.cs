@@ -2,20 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace SFramework.Core.Runtime
 {
     public sealed class SFContainer : ISFContainer
     {
-        private static readonly Dictionary<Type, SFInjectableTypeInfo> _injectableTypes;
+        private static readonly Dictionary<Type, SFInjectableTypeInfo> InjectableTypes;
         private readonly Dictionary<Type, object> _dependencies = new();
         private readonly Dictionary<Type, List<Type>> _mapping = new();
         private readonly List<ISFService> _services = new();
 
         static SFContainer()
         {
-            _injectableTypes = AppDomain.CurrentDomain.GetAssemblies()
+            InjectableTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsClass && typeof(ISFInjectable).IsAssignableFrom(type))
                 .Select(type => new SFInjectableTypeInfo(ref type))
@@ -33,9 +35,9 @@ namespace SFramework.Core.Runtime
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
-                if (Debug.isDebugBuild)
+                if (SFDebug.IsDebug)
                 {
-                    Debug.LogWarning("Object of this type already exists in the dependency container");
+                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
                 }
             }
 
@@ -50,16 +52,15 @@ namespace SFramework.Core.Runtime
                 if (parameters.Length > 0)
                 {
                     var parameterInstances = new object[parameters.Length];
-                    for (int i = 0; i < parameters.Length; i++)
+                    for (var i = 0; i < parameters.Length; i++)
                     {
                         if (!_dependencies.TryGetValue(parameters[i].ParameterType, out var obj))
                         {
-                            if (Debug.isDebugBuild)
+                            if (SFDebug.IsDebug)
                             {
-                                Debug.LogError($"Service of type {parameters[i].ParameterType.FullName} is not registered. Returning NULL.");
+                                SFDebug.Log($"Service of type {parameters[i].ParameterType.FullName} is not registered. Returning NULL.", LogType.Error);
                             }
-                            
-                            instance = default;
+
                             break;
                         }
 
@@ -85,15 +86,15 @@ namespace SFramework.Core.Runtime
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
-                if (Debug.isDebugBuild)
+                if (SFDebug.IsDebug)
                 {
-                    Debug.LogWarning("Object of this type already exists in the dependency container");
+                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
                 }
             }
 
-            if (Debug.isDebugBuild)
+            if (SFDebug.IsDebug)
             {
-                Debug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
+                SFDebug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
             }
             
             foreach (var subclassType in typeof(TService).GetInterfaces())
@@ -120,16 +121,16 @@ namespace SFramework.Core.Runtime
         {
             if (_dependencies.ContainsKey(type))
             {
-                if (Debug.isDebugBuild)
+                if (SFDebug.IsDebug)
                 {
-                    Debug.LogWarning("Object of this type already exists in the dependency container");
+                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
                 }
             }
             
             
-            if (Debug.isDebugBuild)
+            if (SFDebug.IsDebug)
             {
-                Debug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
+                SFDebug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
             }
             
             foreach (var subclassType in type.GetInterfaces())
@@ -183,6 +184,13 @@ namespace SFramework.Core.Runtime
         }
 
         public object[] Bindings => _dependencies.Values.ToArray();
+        public async UniTask InitServices(CancellationToken cancellationToken)
+        {
+            foreach (var service in _services)
+            {
+                await service.Init(cancellationToken);
+            }
+        }
 
 
         public IEnumerable<T> GetDependencies<T>() where T : class
@@ -224,7 +232,7 @@ namespace SFramework.Core.Runtime
         {
             if (targetObject == null) throw new ArgumentNullException(nameof(targetObject));
 
-            if (!_injectableTypes.TryGetValue(targetObject.GetType(), out var injectableType)) return;
+            if (!InjectableTypes.TryGetValue(targetObject.GetType(), out var injectableType)) return;
 
             InjectFields(ref targetObject, ref injectableType.Fields);
             InjectProperties(ref targetObject, ref injectableType.Properties);

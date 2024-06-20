@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Scripting;
+
+
 
 namespace SFramework.Core.Runtime
 {
@@ -10,5 +15,7 @@ namespace SFramework.Core.Runtime
         object Resolve(Type type);
         T[] ResolveMany<T>();
         object[] Bindings { get; }
+
+        UniTask InitServices(CancellationToken cancellationToken);
     }
 }
