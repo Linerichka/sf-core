@@ -7,7 +7,7 @@ namespace SFramework.Core.Runtime
     {
         public static bool IsDebug { get; private set; }
 
-        private static bool CanLog => !Application.isPlaying || IsDebug;
+        private static bool CanLog => Application.isEditor || IsDebug;
 
         [StringFormatMethod("message")]
         public static void Log(string message)
