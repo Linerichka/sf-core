@@ -6,8 +6,8 @@ namespace SFramework.Core.Runtime
 {
     public abstract class SFProjectSettings<T> : ScriptableObject where T : SFProjectSettings<T>
     {
-        private const string _folderPath = "SFramework/Settings/";
-        public static readonly string _assetPath = $"Assets/{_folderPath}{typeof(T).Name}.asset";
+        private const string _folderPath = "SFramework/Settings";
+        public static readonly string _assetPath = $"Assets/{_folderPath}/{typeof(T).Name}.asset";
 
         public static bool Instance(out T result)
         {
@@ -15,7 +15,7 @@ namespace SFramework.Core.Runtime
             
 #if UNITY_EDITOR
             var path = Path
-                .GetFullPath(Path.Combine(Application.dataPath + Path.DirectorySeparatorChar + _folderPath));
+                .GetFullPath(Path.Combine(Application.dataPath, _folderPath));
 
             if (!Directory.Exists(path))
             {

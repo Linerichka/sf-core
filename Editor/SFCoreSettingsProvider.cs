@@ -11,11 +11,10 @@ namespace SFramework.Core.Editor
         {
             var provider = new SettingsProvider("Project/SFramework/Core", SettingsScope.Project)
             {
-                guiHandler = (searchContext) =>
+                guiHandler = _ =>
                 {
                     if (!SFCoreSettings.Instance(out var settings)) return;
                     var settingsSO = new SerializedObject(settings);
-                    EditorGUILayout.PropertyField(settingsSO.FindProperty("GeneratorScriptsPath"));
                     EditorGUILayout.PropertyField(settingsSO.FindProperty("IsDebug"));
                     settingsSO.ApplyModifiedPropertiesWithoutUndo();
                     AssetDatabase.SaveAssetIfDirty(settingsSO.targetObject);
