@@ -7,45 +7,45 @@ namespace SFramework.Core.Runtime
     {
         private static T _instance;
 
-        public static bool Instance(out T result)
+        public static bool TryGetInstance(out T instance)
         {
-            result = null;
+            _instance = Resources.Load<T>(typeof(T).Name);
 
-#if UNITY_EDITOR
             if (_instance == null)
             {
-                var settings = Resources.Load<T>(typeof(T).Name);
-                if (settings == null)
+#if UNITY_EDITOR
+
+                if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/SFramework"))
                 {
-                  
-                    
-                    if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/SFramework"))
-                    {
-                        UnityEditor.AssetDatabase.CreateFolder("Assets", "SFramework");
-                    }
-                    
-                    if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/SFramework/Resources"))
-                    {
-                        UnityEditor.AssetDatabase.CreateFolder("Assets/SFramework", "Resources");
-                    }
-                    
-                    UnityEditor.AssetDatabase.CreateAsset(CreateInstance<T>(), "Assets/SFramework/Resources/" + typeof(T).Name + ".asset");
-                    UnityEditor.AssetDatabase.ImportAsset("Assets/SFramework/Resources/" + typeof(T).Name + ".asset", UnityEditor.ImportAssetOptions.ForceUpdate);
-                    UnityEditor.AssetDatabase.Refresh();
-                    settings = Resources.Load<T>(typeof(T).Name);
+                    UnityEditor.AssetDatabase.CreateFolder("Assets", "SFramework");
                 }
 
-                result = settings;
-                _instance = result;
-            }
-            else
-            {
-                result = _instance;
+                if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/SFramework/Resources"))
+                {
+                    UnityEditor.AssetDatabase.CreateFolder("Assets/SFramework", "Resources");
+                }
+                
+                UnityEditor.AssetDatabase.CreateAsset(CreateInstance<T>(), "Assets/SFramework/Resources/" + typeof(T).Name + ".asset");
+                UnityEditor.AssetDatabase.ImportAsset("Assets/SFramework/Resources/" + typeof(T).Name + ".asset", UnityEditor.ImportAssetOptions.ForceUpdate);
+                UnityEditor.AssetDatabase.Refresh();
+
+                _instance = Resources.Load<T>(typeof(T).Name);
+
+                if (_instance == null)
+                {
+                    instance = default;
+                    return false;
+                }
+#else
+                 _instance = CreateInstance<T>();
+#endif
+
+                instance = _instance;
+                return true;
             }
             
+            instance = _instance;
             return true;
-#endif
-            return false;
         }
     }
 }

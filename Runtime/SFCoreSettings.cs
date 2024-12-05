@@ -1,8 +1,5 @@
-﻿using System;
-
-namespace SFramework.Core.Runtime
+﻿namespace SFramework.Core.Runtime
 {
-    [Serializable]
     public class SFCoreSettings : SFProjectSettings<SFCoreSettings>
     {
         public bool IsDebug;
