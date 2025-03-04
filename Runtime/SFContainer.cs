@@ -31,7 +31,7 @@ namespace SFramework.Core.Runtime
             Root = gameObject.transform;
         }
 
-        public TService Register<TService, TImplementation>() where TImplementation : TService
+        public TService Register<TService, TImplementation>() where TImplementation : class, TService
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
@@ -44,7 +44,7 @@ namespace SFramework.Core.Runtime
             object instance;
 
             var constructor = typeof(TImplementation).GetTypeInfo().DeclaredConstructors.FirstOrDefault();
-            
+
             if (constructor != null)
             {
                 var parameters = constructor.GetParameters();
@@ -82,7 +82,7 @@ namespace SFramework.Core.Runtime
             return Register<TService, TImplementation>(instance);
         }
 
-        public TService Register<TService, TImplementation>(object instance) where TImplementation : TService
+        public TService Register<TService, TImplementation>(object instance) where TImplementation : class, TService
         {
             if (_dependencies.ContainsKey(typeof(TService)))
             {
@@ -96,7 +96,7 @@ namespace SFramework.Core.Runtime
             {
                 SFDebug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
             }
-            
+
             foreach (var subclassType in typeof(TService).GetInterfaces())
             {
                 if (!_mapping.ContainsKey(subclassType))
@@ -116,7 +116,44 @@ namespace SFramework.Core.Runtime
 
             return (TService)instance;
         }
-        
+
+        public TService Register<TService>(object instance)
+        {
+            if (instance is not TService) return default;
+
+            if (_dependencies.ContainsKey(typeof(TService)))
+            {
+                if (SFDebug.IsDebug)
+                {
+                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
+                }
+            }
+
+            if (SFDebug.IsDebug)
+            {
+                SFDebug.Log($"[Core] Bind: {typeof(TService).Name} to {instance.GetType().Name}");
+            }
+
+            foreach (var subclassType in typeof(TService).GetInterfaces())
+            {
+                if (!_mapping.ContainsKey(subclassType))
+                {
+                    _mapping[subclassType] = new List<Type>();
+                }
+
+                _mapping[subclassType].Add(typeof(TService));
+            }
+
+            _dependencies[typeof(TService)] = instance ?? throw new ArgumentNullException(nameof(instance));
+
+            if (typeof(ISFService).IsAssignableFrom(typeof(TService)))
+            {
+                _services.Add(instance as ISFService);
+            }
+
+            return (TService)instance;
+        }
+
         public void Register(Type type, object instance)
         {
             if (_dependencies.ContainsKey(type))
@@ -126,25 +163,25 @@ namespace SFramework.Core.Runtime
                     SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
                 }
             }
-            
-            
+
+
             if (SFDebug.IsDebug)
             {
                 SFDebug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
             }
-            
+
             foreach (var subclassType in type.GetInterfaces())
             {
                 if (!_mapping.ContainsKey(subclassType))
                 {
                     _mapping[subclassType] = new List<Type>();
                 }
-            
+
                 _mapping[subclassType].Add(type);
             }
-            
+
             _dependencies[type] = instance ?? throw new ArgumentNullException(nameof(instance));
-            
+
             if (typeof(ISFService).IsAssignableFrom(type))
             {
                 _services.Add(instance as ISFService);
@@ -184,6 +221,7 @@ namespace SFramework.Core.Runtime
         }
 
         public object[] Bindings => _dependencies.Values.ToArray();
+
         public async UniTask InitServices(CancellationToken cancellationToken)
         {
             foreach (var service in _services)
