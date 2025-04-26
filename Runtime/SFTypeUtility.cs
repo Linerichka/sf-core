@@ -51,5 +51,41 @@ namespace SFramework.Core.Runtime
         {
             return string.IsNullOrEmpty(typeName) ? null : _typeCache.GetValueOrDefault(typeName);
         }
+        
+        public static object CreateInstance(Type type, params object[] args)
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            // Choose correct binding flags: public + non-public constructors
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            return Activator.CreateInstance(
+                type,
+                flags,
+                binder: null,
+                args: args,
+                culture: null
+            );
+        }
+        
+        public static T CreateInstance<T>(Type type, params object[] args) where T : class
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            // Choose correct binding flags: public + non-public constructors
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            var obj = Activator.CreateInstance(
+                type,
+                flags,
+                binder: null,
+                args: args,
+                culture: null
+            );
+
+            return obj as T;
+        }
     }
 }
