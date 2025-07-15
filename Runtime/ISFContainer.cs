@@ -8,7 +8,7 @@ using UnityEngine.Scripting;
 
 namespace SFramework.Core.Runtime
 {
-    public interface ISFContainer
+    public interface ISFContainer : ISFRegistered
     {
         Transform Root { get; }
         T Resolve<T>() where T : class;
