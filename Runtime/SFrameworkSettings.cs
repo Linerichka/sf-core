@@ -15,7 +15,12 @@ namespace SFramework.Core.Runtime
 #if UNITY_EDITOR
 
             var filePath = Path.Combine(Application.dataPath, $"SFramework/Settings/{typeof(T).Name}.json");
-            
+            var dirPath = Path.Combine(Application.dataPath, $"SFramework/Settings/{typeof(T).Name}.json");
+
+            if (!Directory.Exists(dirPath))
+            {
+                Directory.CreateDirectory(dirPath);
+            }
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, JsonUtility.ToJson(Activator.CreateInstance<T>(), true), Encoding.UTF8);
