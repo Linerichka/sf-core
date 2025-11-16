@@ -15,7 +15,7 @@ namespace SFramework.Core.Runtime
 #if UNITY_EDITOR
 
             var filePath = Path.Combine(Application.dataPath, $"SFramework/Settings/{typeof(T).Name}.json");
-            var dirPath = Path.Combine(Application.dataPath, $"SFramework/Settings/{typeof(T).Name}.json");
+            var dirPath = Path.GetDirectoryName(filePath);
 
             if (!Directory.Exists(dirPath))
             {
