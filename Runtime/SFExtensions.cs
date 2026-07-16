@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace SFramework.Core.Runtime
 {
     public static partial class SFExtensions
@@ -6,8 +8,9 @@ namespace SFramework.Core.Runtime
 
         public static void Inject(this object behaviour)
         {
-            if (SFContextRoot._Container == null) return;
-            SFContextRoot._Container.Inject(behaviour);
+            if (SFContainer.Instance == null) return;
+            
+            SFContainer.Instance.Inject(behaviour);
         }
     }
 }

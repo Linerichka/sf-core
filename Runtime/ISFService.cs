@@ -4,7 +4,7 @@ using Cysharp.Threading.Tasks;
 
 namespace SFramework.Core.Runtime
 {
-    public interface ISFService : ISFInjectable, IDisposable, ISFRegistered
+    public interface ISFService : ISFInjectable, IDisposable
     {
         UniTask Init(CancellationToken cancellationToken);
     }

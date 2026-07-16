@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -7,9 +8,7 @@ namespace SFramework.Core.Runtime
 {
     public abstract class SFContextRoot : MonoBehaviour
     {
-        internal static SFContainer _Container => _container;
-        protected static ISFContainer Container => _container;
-        private static SFContainer _container;
+        protected SFContainer _container;
 
         protected virtual void Awake()
         {
@@ -27,6 +26,11 @@ namespace SFramework.Core.Runtime
 
         protected abstract void PreInit();
         protected abstract void Bind(SFContainer container);
-        protected abstract UniTask Init(ISFContainer container, CancellationToken cancellationToken);
+        protected abstract UniTask Init(SFContainer container, CancellationToken cancellationToken);
+
+        protected void OnDestroy()
+        {
+            _container.Dispose();
+        }
     }
 }

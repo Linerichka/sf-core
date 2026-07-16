@@ -10,8 +10,10 @@ using UnityEngine;
 namespace SFramework.Core.Runtime
 {
 
-    public sealed class SFContainer : ISFContainer
+    public sealed class SFContainer : IDisposable
     {
+        public static SFContainer Instance { get; private set; }
+        
         private static readonly Dictionary<Type, SFInjectableTypeInfo> InjectableTypes;
         private readonly Dictionary<Type, object> _dependencies = new();
         private readonly Dictionary<Type, List<Type>> _mapping = new();
@@ -30,12 +32,12 @@ namespace SFramework.Core.Runtime
 
         public SFContainer(GameObject gameObject)
         {
-            Register<ISFContainer, SFContainer>(this);
+            Instance = this;
             Root = gameObject.transform;
         }
 
         public TService Register<TService, TImplementation>() 
-        where TService : ISFRegistered
+        where TService : ISFService
         where TImplementation : class, TService
         {
             if (_dependencies.ContainsKey(typeof(TService)))
@@ -88,7 +90,7 @@ namespace SFramework.Core.Runtime
         }
 
         public TService Register<TService, TImplementation>(object instance) 
-            where TService : ISFRegistered
+            where TService : ISFService
             where TImplementation : class, TService
         {
             if (_dependencies.ContainsKey(typeof(TService)))
@@ -125,7 +127,7 @@ namespace SFramework.Core.Runtime
         }
 
         public TService Register<TService>(object instance)
-            where TService : ISFRegistered
+            where TService : ISFService
         {
             if (instance is not TService) return default;
 
@@ -328,6 +330,11 @@ namespace SFramework.Core.Runtime
                 }
             }
         }
+        
+        public void Dispose()
+        {
+            Instance = null;
+        }
 
         #region IgnorerAssembly
         private static readonly HashSet<string> internalAssemblyNames = new HashSet<string>()
@@ -458,7 +465,5 @@ namespace SFramework.Core.Runtime
             "SyntaxTree.VisualStudio.Unity.Messaging"
         };
         #endregion
-
     }
-
 }
