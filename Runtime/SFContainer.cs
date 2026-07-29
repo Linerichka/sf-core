@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -22,7 +21,7 @@ namespace SFramework.Core.Runtime
         static SFContainer()
         {
             InjectableTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !internalAssemblyNames.Contains(a.GetName().Name))
+                .Where(a => !_internalAssemblyNames.Contains(a.GetName().Name))
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsClass && typeof(ISFInjectable).IsAssignableFrom(type))
                 .Select(type => new SFInjectableTypeInfo(ref type))
@@ -40,14 +39,6 @@ namespace SFramework.Core.Runtime
         where TService : ISFService
         where TImplementation : class, TService
         {
-            if (_dependencies.ContainsKey(typeof(TService)))
-            {
-                if (SFDebug.IsDebug)
-                {
-                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
-                }
-            }
-
             object instance;
 
             var constructor = typeof(TImplementation).GetTypeInfo().DeclaredConstructors.FirstOrDefault();
@@ -63,11 +54,7 @@ namespace SFramework.Core.Runtime
                     {
                         if (!_dependencies.TryGetValue(parameters[i].ParameterType, out var obj))
                         {
-                            if (SFDebug.IsDebug)
-                            {
-                                SFDebug.Log($"Service of type {parameters[i].ParameterType.FullName} is not registered. Returning NULL.", LogType.Error);
-                            }
-
+                            SFDebug.Log(LogType.Error, $"[SFContainer] Service of type {parameters[i].ParameterType.FullName} is not registered. Returning NULL.");
                             break;
                         }
 
@@ -93,17 +80,32 @@ namespace SFramework.Core.Runtime
             where TService : ISFService
             where TImplementation : class, TService
         {
-            if (_dependencies.ContainsKey(typeof(TService)))
+            if (instance == null)
             {
                 if (SFDebug.IsDebug)
                 {
-                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
+                    SFDebug.Log(LogType.Error, $"[SFContainer] Instance of type {typeof(TImplementation).FullName} is null.");
                 }
+                return default;
+            }
+            
+            if (instance is not TImplementation)
+            {
+                if (SFDebug.IsDebug)
+                {
+                    SFDebug.Log(LogType.Error, $"[SFContainer] Object of this type is not derivated from {typeof(TImplementation).FullName}");
+                }
+                return default;
+            }
+
+            if (SFDebug.IsDebug && _dependencies.ContainsKey(typeof(TService)))
+            {
+                SFDebug.Log(LogType.Warning, $"Object of {typeof(TService).FullName} type already exists in the dependency container");
             }
 
             if (SFDebug.IsDebug)
             {
-                SFDebug.Log($"[Core] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
+                SFDebug.Log($"[SFContainer] Bind: {typeof(TService).Name} to {typeof(TImplementation).Name}");
             }
 
             foreach (var subclassType in typeof(TService).GetInterfaces())
@@ -116,7 +118,7 @@ namespace SFramework.Core.Runtime
                 _mapping[subclassType].Add(typeof(TService));
             }
 
-            _dependencies[typeof(TService)] = instance ?? throw new ArgumentNullException(nameof(instance));
+            _dependencies[typeof(TService)] = instance;
 
             if (typeof(ISFService).IsAssignableFrom(typeof(TService)))
             {
@@ -124,78 +126,6 @@ namespace SFramework.Core.Runtime
             }
 
             return (TService)instance;
-        }
-
-        public TService Register<TService>(object instance)
-            where TService : ISFService
-        {
-            if (instance is not TService) return default;
-
-            if (_dependencies.ContainsKey(typeof(TService)))
-            {
-                if (SFDebug.IsDebug)
-                {
-                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
-                }
-            }
-
-            if (SFDebug.IsDebug)
-            {
-                SFDebug.Log($"[Core] Bind: {typeof(TService).Name} to {instance.GetType().Name}");
-            }
-
-            foreach (var subclassType in typeof(TService).GetInterfaces())
-            {
-                if (!_mapping.ContainsKey(subclassType))
-                {
-                    _mapping[subclassType] = new List<Type>();
-                }
-
-                _mapping[subclassType].Add(typeof(TService));
-            }
-
-            _dependencies[typeof(TService)] = instance ?? throw new ArgumentNullException(nameof(instance));
-
-            if (typeof(ISFService).IsAssignableFrom(typeof(TService)))
-            {
-                _services.Add(instance as ISFService);
-            }
-
-            return (TService)instance;
-        }
-
-        public void Register(Type type, object instance)
-        {
-            if (_dependencies.ContainsKey(type))
-            {
-                if (SFDebug.IsDebug)
-                {
-                    SFDebug.Log("Object of this type already exists in the dependency container", LogType.Warning);
-                }
-            }
-
-
-            if (SFDebug.IsDebug)
-            {
-                SFDebug.Log($"[Core] Bind: {type.Name} to {instance.GetType().Name}");
-            }
-
-            foreach (var subclassType in type.GetInterfaces())
-            {
-                if (!_mapping.ContainsKey(subclassType))
-                {
-                    _mapping[subclassType] = new List<Type>();
-                }
-
-                _mapping[subclassType].Add(type);
-            }
-
-            _dependencies[type] = instance ?? throw new ArgumentNullException(nameof(instance));
-
-            if (typeof(ISFService).IsAssignableFrom(type))
-            {
-                _services.Add(instance as ISFService);
-            }
         }
 
         public Transform Root { get; private set; }
@@ -229,8 +159,6 @@ namespace SFramework.Core.Runtime
 
             return _dependencies.FirstOrDefault(kvp => type.IsAssignableFrom(kvp.Key)).Value;
         }
-
-        public object[] Bindings => _dependencies.Values.ToArray();
 
         public async UniTask InitServices(CancellationToken cancellationToken)
         {
@@ -337,7 +265,7 @@ namespace SFramework.Core.Runtime
         }
 
         #region IgnorerAssembly
-        private static readonly HashSet<string> internalAssemblyNames = new HashSet<string>()
+        private static readonly HashSet<string> _internalAssemblyNames = new HashSet<string>()
         {
             "mscorlib",
             "System",
