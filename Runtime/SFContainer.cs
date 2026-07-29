@@ -54,7 +54,8 @@ namespace SFramework.Core.Runtime
                     {
                         if (!_dependencies.TryGetValue(parameters[i].ParameterType, out var obj))
                         {
-                            SFDebug.Log(LogType.Error, $"[SFContainer] Service of type {parameters[i].ParameterType.FullName} is not registered. Returning NULL.");
+                            SFDebug.Log(LogType.Error, $"[SFContainer] Object {typeof(TImplementation).FullName} required parameter " +
+                                                       $"{parameters[i].ParameterType.FullName}, but it is not registered.");
                             break;
                         }
 
