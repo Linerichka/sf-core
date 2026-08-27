@@ -131,12 +131,12 @@ namespace SFramework.Core.Runtime
 
         public Transform Root { get; private set; }
 
-        public T Resolve<T>() where T : class
+        public T Resolve<T>() where T : class, ISFService
         {
             return Resolve(typeof(T)) as T;
         }
 
-        public T[] ResolveMany<T>()
+        public T[] ResolveMany<T>() where T : class, ISFService
         {
             if (!_mapping.ContainsKey(typeof(T))) return Array.Empty<T>();
 

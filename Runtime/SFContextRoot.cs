@@ -20,8 +20,10 @@ namespace SFramework.Core.Runtime
 
         private async UniTaskVoid Start()
         {
+            gameObject.SetActive(false);
             await _container.InitServices(destroyCancellationToken);
             await Init(_container, destroyCancellationToken);
+            gameObject.SetActive(true);
         }
 
         protected abstract void PreInit();
