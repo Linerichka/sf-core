@@ -20,11 +20,14 @@ namespace SFramework.Core.Runtime
 
         static SFContainer()
         {
+            var fieldTemp = new List<FieldInfo>(32);
+            var propertyTemp = new List<PropertyInfo>(32);
+            var methodTemp = new List<MethodInfo>(32);
             InjectableTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !_internalAssemblyNames.Contains(a.GetName().Name))
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsClass && typeof(ISFInjectable).IsAssignableFrom(type))
-                .Select(type => new SFInjectableTypeInfo(ref type))
+                .Select(type => new SFInjectableTypeInfo(ref type, fieldTemp, propertyTemp, methodTemp))
                 .ToDictionary(typeInfo => typeInfo.Type, t => t);
         }
 

@@ -14,14 +14,14 @@ namespace SFramework.Core.Runtime
         internal Dictionary<MethodInfo, ParameterInfo[]> ParametersByMethod;
 
         private const BindingFlags BINDING_FLAGS =
-            BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+            BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
-        internal SFInjectableTypeInfo(ref Type type)
+        internal SFInjectableTypeInfo(ref Type type, List<FieldInfo> fieldsTemp, List<PropertyInfo> propertiesTemp, List<MethodInfo> methodsTemp)
         {
             Type = type;
-            GetFields();
-            GetProperties();
-            GetMethods();
+            GetFields(fieldsTemp);
+            GetProperties(propertiesTemp);
+            GetMethods(methodsTemp);
         }
 
         public override string ToString()
@@ -29,22 +29,47 @@ namespace SFramework.Core.Runtime
             return Type.Name;
         }
 
-        private void GetFields()
+        private void GetFields(List<FieldInfo> fieldsTemp)
         {
-            var fieldInfos = Type.GetFields(BINDING_FLAGS);
-            Fields =  fieldInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null).ToArray();
+            fieldsTemp.Clear();
+            var currentType = Type;
+            var objectType = typeof(object);
+            while (currentType != objectType)
+            {
+                var fields = currentType.GetFields(BINDING_FLAGS);
+                fieldsTemp.AddRange(fields.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null));
+                currentType = currentType.BaseType;
+            }
+            Fields = fieldsTemp.ToArray();
         }
 
-        private void GetProperties()
+        private void GetProperties(List<PropertyInfo> propertiesTemp)
         {
-            var propertyInfos = Type.GetProperties(BINDING_FLAGS);
-            Properties =  propertyInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null).ToArray();
+            propertiesTemp.Clear();
+            var currentType = Type;
+            var objectType = typeof(object);
+            while (currentType != objectType)
+            {
+                var properties = currentType.GetProperties(BINDING_FLAGS);
+                propertiesTemp.AddRange(properties.Where(p => p.GetCustomAttribute<SFInjectAttribute>(true) != null));
+                currentType = currentType.BaseType;
+            }
+            Properties = propertiesTemp.ToArray();
         }
 
-        private void GetMethods()
+        private void GetMethods(List<MethodInfo> methodsTemp)
         {
-            var methodInfos = Type.GetMethods(BINDING_FLAGS);
-            Methods = methodInfos.Where(f => f.GetCustomAttribute<SFInjectAttribute>(true) != null).ToArray();
+            methodsTemp.Clear();
+            var currentType = Type;
+            var objectType = typeof(object);
+            while (currentType != objectType)
+            {
+                var methods = currentType.GetMethods(BINDING_FLAGS);
+                methodsTemp.AddRange(methods.Where(m => m.GetCustomAttribute<SFInjectAttribute>(true) != null));
+                currentType = currentType.BaseType;
+            }
+            Methods = methodsTemp.ToArray();
+
             ParametersByMethod = new Dictionary<MethodInfo, ParameterInfo[]>();
             foreach (var methodInfo in Methods)
             {
