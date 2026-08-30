@@ -212,7 +212,12 @@ namespace SFramework.Core.Runtime
         {
             if (targetObject == null) throw new ArgumentNullException(nameof(targetObject));
 
-            if (!InjectableTypes.TryGetValue(targetObject.GetType(), out var injectableType)) return;
+            if (!InjectableTypes.TryGetValue(targetObject.GetType(), out var injectableType))
+            {
+                SFDebug.Log(LogType.Warning, $"[SFContainer] Cannot inject in object {targetObject.GetType().FullName}," +
+                                             $" this not derivated from ISFInjectable.");
+                return;
+            }
 
             InjectFields(ref targetObject, ref injectableType.Fields);
             InjectProperties(ref targetObject, ref injectableType.Properties);
