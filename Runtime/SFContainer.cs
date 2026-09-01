@@ -270,6 +270,10 @@ namespace SFramework.Core.Runtime
         
         public void Dispose()
         {
+            foreach (var service in _services)
+            {
+                service.Dispose();
+            }
             Instance = null;
         }
 
