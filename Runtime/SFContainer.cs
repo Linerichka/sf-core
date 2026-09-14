@@ -27,7 +27,7 @@ namespace SFramework.Core.Runtime
                 .Where(a => !_internalAssemblyNames.Contains(a.GetName().Name))
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsClass && typeof(ISFInjectable).IsAssignableFrom(type))
-                .Select(type => new SFInjectableTypeInfo(ref type, fieldTemp, propertyTemp, methodTemp))
+                .Select(type => new SFInjectableTypeInfo(type, fieldTemp, propertyTemp, methodTemp))
                 .ToDictionary(typeInfo => typeInfo.Type, t => t);
         }
 
@@ -212,16 +212,19 @@ namespace SFramework.Core.Runtime
         {
             if (targetObject == null) throw new ArgumentNullException(nameof(targetObject));
 
-            if (!InjectableTypes.TryGetValue(targetObject.GetType(), out var injectableType))
+            var type = targetObject.GetType();
+            if (InjectableTypes.TryGetValue(type, out var injectableType) ||
+               (type.IsGenericType && InjectableTypes.TryGetValue(type.GetGenericTypeDefinition(), out injectableType)))
             {
-                SFDebug.Log(LogType.Warning, $"[SFContainer] Cannot inject in object {targetObject.GetType().FullName}," +
-                                             $" this not derivated from ISFInjectable.");
-                return;
+                InjectFields(ref targetObject, ref injectableType.Fields);
+                InjectProperties(ref targetObject, ref injectableType.Properties);
+                InjectMethods(ref targetObject, ref injectableType.Methods, ref injectableType.ParametersByMethod);
             }
-
-            InjectFields(ref targetObject, ref injectableType.Fields);
-            InjectProperties(ref targetObject, ref injectableType.Properties);
-            InjectMethods(ref targetObject, ref injectableType.Methods, ref injectableType.ParametersByMethod);
+            else
+            {
+                SFDebug.Log(LogType.Warning, $"[SFContainer] Cannot inject in object {targetObject.GetType().FullName}, " +
+                                             $"this not derivated from ISFInjectable.");
+            }
         }
 
 

@@ -16,7 +16,7 @@ namespace SFramework.Core.Runtime
         private const BindingFlags BINDING_FLAGS =
             BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
-        internal SFInjectableTypeInfo(ref Type type, List<FieldInfo> fieldsTemp, List<PropertyInfo> propertiesTemp, List<MethodInfo> methodsTemp)
+        internal SFInjectableTypeInfo(Type type, List<FieldInfo> fieldsTemp, List<PropertyInfo> propertiesTemp, List<MethodInfo> methodsTemp)
         {
             Type = type;
             GetFields(fieldsTemp);
